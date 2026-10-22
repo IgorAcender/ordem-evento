@@ -38,6 +38,14 @@ input,textarea,select{font:inherit;font-size:16px;color:var(--fg);background:var
   border-radius:10px;padding:11px 12px;width:100%;text-transform:none;letter-spacing:0;min-width:0}
 textarea{min-height:110px;resize:none;overflow:hidden;field-sizing:content;line-height:1.5}
 textarea.sm{min-height:50px}
+.extras{display:grid;gap:14px}
+.extras:empty{display:none}
+.extra{display:grid;gap:8px;padding:12px;border:1px dashed var(--line);border-radius:12px}
+.extra .top{display:flex;gap:8px;align-items:center}
+.extra .top input{font-weight:600}
+.extra .rm{flex:none;padding:10px 12px;font-size:.9rem;color:var(--muted)}
+.extra .rm.sure{color:#c0392b;border-color:#c0392b}
+button.add{border-style:dashed;color:var(--accent);border-color:var(--accent);background:transparent}
 input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .qty input{text-align:center;font-family:var(--display);font-weight:800;font-size:1.4rem;font-variant-numeric:tabular-nums;padding:10px 4px}
 .hint{font-size:.82rem;color:var(--muted);margin:-4px 0 0}
@@ -103,6 +111,12 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
       <label class="full">Uniforme<textarea class="sm" id="uniforme"></textarea></label>
       <label class="full">Observação<textarea class="sm" id="observacao"></textarea></label>
     </div>
+  </section>
+
+  <section class="card">
+    <h2>Campos extras</h2>
+    <div id="extras" class="extras"></div>
+    <button type="button" id="addExtra" class="add">+ Adicionar campo</button>
   </section>
 
   <section class="card">
@@ -529,13 +543,36 @@ IDS.forEach(id=>{if(saved[id]!=null)$(id).value=saved[id];$(id).addEventListener
 const grow=t=>{t.style.height="auto";t.style.height=t.scrollHeight+2+"px"};
 document.querySelectorAll("textarea").forEach(t=>{grow(t);t.addEventListener("input",()=>grow(t))});
 
+// campos extras: título livre + texto
+let extras=Array.isArray(saved.extras)?saved.extras:[];
+const saveExtras=()=>{saved.extras=extras;try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}};
+function renderExtras(focusLast){
+  const box=$("extras");box.innerHTML="";
+  extras.forEach((x,i)=>{
+    const d=document.createElement("div");d.className="extra";
+    d.innerHTML=`<div class="top"><input id="ext_t_${i}" placeholder="Título do campo" aria-label="Título do campo"><button type="button" class="rm">Remover</button></div><textarea class="sm" id="ext_v_${i}" aria-label="Conteúdo do campo"></textarea>`;
+    const t=d.querySelector("input"),ta=d.querySelector("textarea"),rm=d.querySelector(".rm");
+    t.value=x.t||"";ta.value=x.v||"";
+    t.oninput=()=>{x.t=t.value;saveExtras()};
+    ta.oninput=()=>{x.v=ta.value;saveExtras();grow(ta)};
+    rm.onclick=()=>{
+      if(!rm.classList.contains("sure")){rm.classList.add("sure");rm.textContent="Confirmar";setTimeout(()=>{rm.classList.remove("sure");rm.textContent="Remover"},3000);return}
+      extras.splice(i,1);saveExtras();renderExtras();
+    };
+    box.appendChild(d);grow(ta);
+    if(focusLast&&i===extras.length-1)t.focus();
+  });
+}
+$("addExtra").onclick=()=>{extras.push({t:"",v:""});saveExtras();renderExtras(true)};
+renderExtras();
+
 const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2200)};
 
 // limpar com confirmação
 $("btnClear").onclick=()=>{$("confirm").classList.add("on");$("btnClear").hidden=true;$("btnPdf").hidden=true};
 const closeC=()=>{$("confirm").classList.remove("on");$("btnClear").hidden=false;$("btnPdf").hidden=false};
 $("no").onclick=closeC;
-$("yes").onclick=()=>{IDS.forEach(id=>$(id).value="");saved={};try{localStorage.removeItem(KEY)}catch(e){}document.querySelectorAll("textarea").forEach(grow);closeC();toast("Formulário limpo")};
+$("yes").onclick=()=>{IDS.forEach(id=>$(id).value="");saved={};extras=[];renderExtras();try{localStorage.removeItem(KEY)}catch(e){}document.querySelectorAll("textarea").forEach(grow);closeC();toast("Formulário limpo")};
 
 function dataBR(d){if(!d)return"";const[a,m,dd]=d.split("-");return`${dd}/${m}/${a}`}
 
@@ -644,6 +681,7 @@ $("btnPdf").onclick=async()=>{
   }
   bloco("Uniforme",v("uniforme"));
   bloco("Observação",v("observacao"));
+  extras.forEach(x=>{const tv=(x.v||"").trim(),tt=(x.t||"").trim();if(tv||tt)bloco(tt||"Informação",tv||"—")});
 
   // responsável
   ensure(16);
