@@ -537,16 +537,28 @@ $("btnPdf").onclick=async()=>{
   const ink=[31,29,26],mut=[110,104,96],acc=[184,97,26],soft=[246,230,214],line=[227,222,212];
 
   // cabeçalho
-  doc.setFillColor(...ink);doc.rect(0,0,W,40,"F");
+  // esquerda: nome do evento grande / direita: local e data
+  const HH=50,leftW=CW*0.56,rightW=CW*0.40,RX=W-M;
+  doc.setFillColor(...ink);doc.rect(0,0,W,HH,"F");
   doc.setTextColor(232,154,82);doc.setFont("helvetica","bold");doc.setFontSize(9);
-  doc.text("ORDEM DE SERVIÇO  ·  EVENTO",M,14);
-  doc.setTextColor(255,255,255);doc.setFontSize(22);
-  doc.text(doc.splitTextToSize(v("evento"),CW)[0],M,26);
-  doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor(220,214,204);
-  const sub=[v("local"),dataBR(v("data"))].filter(Boolean).join("   ·   ");
-  if(sub)doc.text(sub,M,34);
+  doc.text("ORDEM DE SERVIÇO",M,14);
+  doc.setTextColor(255,255,255);
+  let fs=30;doc.setFontSize(fs);
+  let ev=doc.splitTextToSize(v("evento"),leftW);
+  while(ev.length>2&&fs>18){fs-=2;doc.setFontSize(fs);ev=doc.splitTextToSize(v("evento"),leftW)}
+  ev=ev.slice(0,2);
+  const lh=fs*0.40;
+  doc.text(ev,M,ev.length>1?27:32,{lineHeightFactor:1.1});
+  // lado direito
+  doc.setTextColor(232,154,82);doc.setFontSize(9);doc.text("LOCAL",RX,14,{align:"right"});
+  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(15);
+  const loc=doc.splitTextToSize(v("local")||"—",rightW).slice(0,2);
+  doc.text(loc,RX,21,{align:"right",lineHeightFactor:1.1});
+  if(v("data")){
+    doc.setFontSize(20);doc.text(dataBR(v("data")),RX,loc.length>1?42:38,{align:"right"});
+  }
 
-  let y=52;
+  let y=HH+12;
   const label=(t,x,yy)=>{doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...mut);doc.text(t.toUpperCase(),x,yy)};
   const val=(t,x,yy,w,size=12)=>{doc.setFont("helvetica","normal");doc.setFontSize(size);doc.setTextColor(...ink);const l=doc.splitTextToSize(t||"—",w);doc.text(l,x,yy);return l.length*size*0.42};
 
