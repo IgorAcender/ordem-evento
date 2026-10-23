@@ -75,11 +75,12 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
     <div class="grid">
       <label class="full">Evento<input id="evento"></label>
       <label class="full">Local<input id="local"></label>
+      <label class="full">Endereço<input id="endereco"></label>
       <label>Convidados<input id="convidados" type="number" inputmode="numeric"></label>
       <label>Data<input id="data" type="date"></label>
       <label>Início<input id="inicio" type="time"></label>
       <label>Término<input id="fim" type="time"></label>
-      <label class="full">Observação do horário<input id="obsHora"></label>
+      <label class="full">Observação do horário<textarea class="sm" id="obsHora"></textarea></label>
     </div>
   </section>
 
@@ -532,7 +533,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 //# sourceMappingURL=jspdf.umd.min.js.map
 </script>
 <script>
-const IDS=["evento","local","convidados","data","inicio","fim","obsHora","plano","destilado","drinks","atracao","copo","taca","caneca","equipe","barback","uniforme","observacao","responsavel"];
+const IDS=["evento","local","endereco","convidados","data","inicio","fim","obsHora","plano","destilado","drinks","atracao","copo","taca","caneca","equipe","barback","uniforme","observacao","responsavel"];
 const KEY="ordem-evento-rascunho";
 const $=id=>document.getElementById(id);
 const v=id=>$(id).value.trim();
@@ -580,119 +581,113 @@ $("btnPdf").onclick=async()=>{
   if(!window.jspdf){toast("Erro ao carregar o gerador de PDF");return}
   if(!v("evento")){toast("Preencha o nome do evento");$("evento").focus();return}
   const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:"mm",format:"a4"});
-  const W=210,M=16,CW=W-2*M;
-  const ink=[31,29,26],mut=[110,104,96],acc=[184,97,26],soft=[246,230,214],line=[227,222,212];
+  const build=PH=>{
+  const doc=new jsPDF({unit:"mm",format:[210,PH]});
+  const W=210,M=12,CW=W-2*M,G=3.5,C2=(CW-G)/2;
+  const K=[17,17,17],GR=[70,70,70],BD=[60,60,60],WH=[255,255,255];
+  const pt=0.3528;
+  const font=(st,sz,col)=>{doc.setFont("helvetica",st);doc.setFontSize(sz);doc.setTextColor(...col)};
+  const box=(x,yy,w,h)=>{doc.setDrawColor(...BD);doc.setLineWidth(.45);doc.roundedRect(x,yy,w,h,2.2,2.2,"S")};
+  let y=M;
+  const ensure=h=>{}; // página única, altura ajustada ao conteúdo
 
-  // cabeçalho
-  // esquerda: nome do evento grande / direita: local e data
-  const HH=50,leftW=CW*0.56,rightW=CW*0.40,RX=W-M;
-  doc.setFillColor(...ink);doc.rect(0,0,W,HH,"F");
-  doc.setTextColor(232,154,82);doc.setFont("helvetica","bold");doc.setFontSize(9);
-  doc.text("ORDEM DE SERVIÇO",M,14);
-  doc.setTextColor(255,255,255);
-  let fs=30;doc.setFontSize(fs);
-  let ev=doc.splitTextToSize(v("evento"),leftW);
-  while(ev.length>2&&fs>18){fs-=2;doc.setFontSize(fs);ev=doc.splitTextToSize(v("evento"),leftW)}
+  // ===== cabeçalho preto =====
+  const divX=M+CW*0.60, leftW=divX-M-10, ix=divX+7, tx=ix+11, rw=W-M-tx-5;
+  const nomeEv=v("evento").toUpperCase();
+  let fs=78,ev;
+  doc.setFont("helvetica","bold");
+  for(;;){doc.setFontSize(fs);ev=doc.splitTextToSize(nomeEv,leftW);if(ev.length===1||fs<=34)break;fs-=2}
+  while(ev.length>2&&fs>20){fs-=2;doc.setFontSize(fs);ev=doc.splitTextToSize(nomeEv,leftW)}
   ev=ev.slice(0,2);
-  const lh=fs*0.40;
-  doc.text(ev,M,ev.length>1?27:32,{lineHeightFactor:1.1});
-  // lado direito
-  doc.setTextColor(232,154,82);doc.setFontSize(9);doc.text("LOCAL",RX,14,{align:"right"});
-  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(15);
-  const loc=doc.splitTextToSize(v("local")||"—",rightW).slice(0,2);
-  doc.text(loc,RX,21,{align:"right",lineHeightFactor:1.1});
+  const evLH=fs*pt*0.95;
+  const leftH=17+fs*pt*0.72+(ev.length-1)*evLH+8;
+  // medir lado direito
+  let semana="";
+  if(v("data")){try{semana=new Date(v("data")+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long"});semana=semana.charAt(0).toUpperCase()+semana.slice(1).split("-")[0]}catch(e){}}
+  doc.setFont("helvetica","bold");doc.setFontSize(15);
+  const locL=doc.splitTextToSize(v("local")||"—",rw).slice(0,2);
+  doc.setFont("helvetica","normal");doc.setFontSize(11);
+  const endL=v("endereco")?doc.splitTextToSize(v("endereco"),rw).slice(0,2):[];
+  const dataH=v("data")?20:0;
+  const rightH=10+dataH+7+locL.length*6.2+endL.length*5+6;
+  const HH=Math.max(leftH,rightH,44);
+  doc.setFillColor(...K);doc.roundedRect(M,y,CW,HH,3,3,"F");
+  font("bold",13,WH);doc.text("ORDEM DE SERVIÇO",M+8,y+12,{charSpace:.6});
+  font("bold",fs,WH);
+  ev.forEach((l,i)=>doc.text(l,M+7,y+17+fs*pt*0.72+i*evLH));
+  doc.setDrawColor(...WH);doc.setLineWidth(.3);doc.line(divX,y+6,divX,y+HH-6);
+  let ry=y+(HH-(rightH-6))/2+4;
   if(v("data")){
-    doc.setFontSize(20);doc.text(dataBR(v("data")),RX,loc.length>1?42:38,{align:"right"});
+    // ícone calendário
+    doc.setFillColor(...WH);doc.roundedRect(ix,ry-3,8.5,8.5,1.3,1.3,"F");
+    doc.setFillColor(...K);doc.rect(ix+1,ry-0.2,6.5,4.6,"F");
+    doc.setFillColor(...WH);for(let r=0;r<2;r++)for(let c=0;c<3;c++)doc.rect(ix+1.6+c*2.1,ry+0.6+r*2,1.2,1.2,"F");
+    doc.setFillColor(...K);doc.rect(ix+2,ry-3.6,1,1.8,"F");doc.rect(ix+5.5,ry-3.6,1,1.8,"F");
+    font("normal",9,WH);doc.text("DATA",tx,ry);
+    font("bold",17,WH);doc.text(dataBR(v("data")),tx,ry+7);
+    if(semana){font("normal",11,WH);doc.text(`(${semana})`,tx,ry+12.5)}
+    ry+=dataH;
   }
+  // ícone local
+  const pcx=ix+4.25,pcy=ry-0.6;
+  doc.setFillColor(...WH);doc.circle(pcx,pcy,3.3,"F");doc.triangle(pcx-2.9,pcy+1.6,pcx+2.9,pcy+1.6,pcx,pcy+7,"F");
+  doc.setFillColor(...K);doc.circle(pcx,pcy,1.2,"F");
+  font("normal",9,WH);doc.text("LOCAL",tx,ry);
+  font("bold",15,WH);locL.forEach((l,i)=>doc.text(l,tx,ry+6.5+i*6.2));
+  if(endL.length){font("normal",11,WH);endL.forEach((l,i)=>doc.text(l,tx,ry+6.5+locL.length*6.2-1+i*5))}
+  y+=HH+G;
 
-  let y=HH+12;
-  const label=(t,x,yy)=>{doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...mut);doc.text(t.toUpperCase(),x,yy)};
-  const val=(t,x,yy,w,size=12)=>{doc.setFont("helvetica","normal");doc.setFontSize(size);doc.setTextColor(...ink);const l=doc.splitTextToSize(t||"—",w);doc.text(l,x,yy);return l.length*size*0.42};
+  // ===== caixas =====
+  const LBL=(t,x,yy)=>{font("normal",10.5,GR);doc.text(t.toUpperCase(),x,yy,{charSpace:.2})};
+  const prep=(c,w)=>{let h=11.5;c._p=c.parts.filter(p=>p.text).map(p=>{doc.setFont("helvetica",p.bold?"bold":"normal");doc.setFontSize(p.size);
+      const ls=String(p.text).split("\n").map(s=>s.trim()).filter(Boolean).flatMap(t=>doc.splitTextToSize(t,w-12));const lh=p.size*pt*1.25;h+=ls.length*lh+1.2;return {...p,ls,lh}});
+    if(!c._p.length){c._p=[{ls:["—"],lh:6,size:13,bold:false}];h+=7.2}
+    return h+3.5};
+  const drawC=(c,x,yy,w,h)=>{box(x,yy,w,h);LBL(c.label,x+6,yy+8);let cy=yy+11.5;
+    c._p.forEach(p=>{font(p.bold?"bold":"normal",p.size,K);p.ls.forEach(l=>{doc.text(l,x+6,cy+p.size*pt*0.95);cy+=p.lh});cy+=1.2})};
+  const row2=(a,b)=>{const h=Math.max(prep(a,C2),prep(b,C2));ensure(h);drawC(a,M,y,C2,h);drawC(b,M+C2+G,y,C2,h);y+=h+G};
+  const row1=c=>{const h=prep(c,CW);ensure(h);drawC(c,M,y,CW,h);y+=h+G};
 
-  // grade de informações
   const hora=[v("inicio"),v("fim")].filter(Boolean).join(" às ");
-  const horaTxt=(hora?hora:"")+(v("obsHora")?(hora?" (":"")+v("obsHora")+(hora?")":""):"");
-  const cells=[["Convidados",v("convidados")],["Horário",horaTxt],["Plano",v("plano")],["Vodka / Gin",v("destilado")]];
-  const colW=CW/2;
-  for(let i=0;i<cells.length;i+=2){
-    let h=0;
-    [0,1].forEach(k=>{const c=cells[i+k];if(!c)return;const x=M+k*colW;label(c[0],x,y);h=Math.max(h,val(c[1],x,y+6,colW-6))});
-    y+=6+h+6;
-    doc.setDrawColor(...line);doc.line(M,y-3,W-M,y-3);
-  }
+  row2({label:"Convidados",parts:[{text:v("convidados"),size:24,bold:true}]},
+       {label:"Horário",parts:[{text:hora,size:17,bold:true},{text:v("obsHora"),size:10}]});
+  row2({label:"Plano",parts:[{text:v("plano"),size:17,bold:true}]},
+       {label:"Vodka / Gin",parts:[{text:v("destilado"),size:17,bold:true}]});
 
-  // drinks
-  y+=4;label("Drinks",M,y);y+=7;
-  const drinks=v("drinks").split(/\n|,/).map(s=>s.trim()).filter(Boolean);
-  if(!drinks.length){val("—",M,y,CW);y+=8}
-  else{
-    const half=Math.ceil(drinks.length/2);
-    doc.setFont("helvetica","normal");doc.setFontSize(12);doc.setTextColor(...ink);
-    drinks.forEach((d,i)=>{const col=drinks.length>3&&i>=half?1:0;const row=col?i-half:i;const yy=y+row*7;
-      doc.setFillColor(...acc);doc.circle(M+col*colW+1.5,yy-1.3,1,"F");
-      doc.text(doc.splitTextToSize(d,colW-10)[0],M+col*colW+5,yy)});
-    y+=(drinks.length>3?half:drinks.length)*7+3;
+  // drinks em duas colunas
+  const drinks=v("drinks").split(/\n|,/).map(s=>s.trim()).filter(Boolean).map(s=>s.charAt(0).toUpperCase()+s.slice(1));
+  if(drinks.length){
+    const two=drinks.length>3,half=two?Math.ceil(drinks.length/2):drinks.length,dl=6.6;
+    const h=12+half*dl+3;ensure(h);box(M,y,CW,h);LBL("Drinks",M+6,y+8);
+    if(two){doc.setDrawColor(...BD);doc.setLineWidth(.25);doc.line(M+CW/2,y+12,M+CW/2,y+h-4)}
+    font("normal",14,K);
+    drinks.forEach((d,i)=>{const col=two&&i>=half?1:0,r=col?i-half:i;const x=M+6+col*(CW/2+2),yy=y+12+r*dl+4.6;
+      doc.setFillColor(...K);doc.circle(x+1.2,yy-1.6,1,"F");doc.text(doc.splitTextToSize(d,CW/2-16)[0],x+6,yy)});
+    y+=h+G;
   }
-
-  // atração
-  if(v("atracao")){
-    y+=3;
-    const lines=doc.splitTextToSize(v("atracao"),CW-12);
-    const bh=12+lines.length*5.5;
-    doc.setFillColor(...soft);doc.roundedRect(M,y,CW,bh,3,3,"F");
-    doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...acc);doc.text("ATRAÇÃO",M+6,y+7);
-    doc.setFontSize(13);doc.setTextColor(...ink);doc.text(lines,M+6,y+13.5);
-    y+=bh+8;
-  }
+  if(v("atracao"))row1({label:"Atração",parts:[{text:v("atracao"),size:17,bold:true}]});
 
   // copos
-  label("Copos",M,y);y+=4;
-  const boxes=[["Copo",v("copo")],["Taça",v("taca")],["Caneca",v("caneca")]];
-  const bw=(CW-8)/3;
-  boxes.forEach((b,i)=>{const x=M+i*(bw+4);
-    doc.setDrawColor(...line);doc.setLineWidth(.4);doc.roundedRect(x,y,bw,20,3,3,"S");
-    doc.setFont("helvetica","bold");doc.setFontSize(18);doc.setTextColor(...ink);doc.text(b[1]||"0",x+bw/2,y+11,{align:"center"});
-    doc.setFontSize(8);doc.setTextColor(...mut);doc.text(b[0].toUpperCase(),x+bw/2,y+16.5,{align:"center"})});
-  y+=28;
+  {const h=31;ensure(h);box(M,y,CW,h);LBL("Copos",M+6,y+8);const cw=CW/3;
+   [["Copo",v("copo")],["Taça",v("taca")],["Caneca",v("caneca")]].forEach((b,i)=>{const cx=M+cw*i+cw/2;
+     font("bold",24,K);doc.text(b[1]||"0",cx,y+20.5,{align:"center"});font("normal",10,K);doc.text(b[0].toUpperCase(),cx,y+26.5,{align:"center"});
+     if(i){doc.setDrawColor(...BD);doc.setLineWidth(.25);doc.line(M+cw*i,y+12,M+cw*i,y+h-3)}});
+   y+=h+G}
 
-  // equipe, barback, uniforme, observação (texto livre, quebra de página se precisar)
-  const ensure=h=>{if(y+h>282){doc.addPage();y=20}};
-  const lineH=5.4;
-  const bloco=(t,txt)=>{
-    if(!txt)return;
-    doc.setFont("helvetica","normal");doc.setFontSize(12);
-    const ls=doc.splitTextToSize(txt,CW);
-    ensure(10+Math.min(ls.length,3)*lineH);
-    label(t,M,y);y+=6;
-    ls.forEach(l=>{ensure(lineH);doc.setFont("helvetica","normal");doc.setFontSize(12);doc.setTextColor(...ink);doc.text(l,M,y);y+=lineH});
-    y+=2;doc.setDrawColor(...line);doc.setLineWidth(.3);doc.line(M,y,W-M,y);y+=6;
+  if(v("equipe")||v("barback"))row2({label:"Equipe",parts:[{text:v("equipe"),size:14}]},{label:"Barback",parts:[{text:v("barback"),size:14}]});
+  if(v("uniforme"))row1({label:"Uniforme",parts:[{text:v("uniforme"),size:14}]});
+  if(v("observacao"))row1({label:"Observação",parts:[{text:v("observacao"),size:13}]});
+  extras.forEach(x=>{const tv=(x.v||"").trim(),tt=(x.t||"").trim();if(tv||tt)row1({label:tt||"Informação",parts:[{text:tv,size:13}]})});
+
+  // responsável + data de geração
+  {const c={label:"Responsável",parts:[{text:v("responsavel"),size:20,bold:true}]};const h=prep(c,CW)+2;ensure(h);drawC(c,M,y,CW,h);
+   const now=new Date();font("normal",8,GR);
+   doc.text(`Gerado em ${now.toLocaleDateString("pt-BR")} às ${now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`,M+CW-6,y+h-4,{align:"right"});
+   y+=h}
+  return {doc,y,M};
   };
-  // equipe e barback lado a lado
-  if(v("equipe")||v("barback")){
-    doc.setFont("helvetica","normal");doc.setFontSize(12);
-    const a=doc.splitTextToSize(v("equipe")||"—",colW-6),b=doc.splitTextToSize(v("barback")||"—",colW-6);
-    const n=Math.max(a.length,b.length);
-    ensure(8+n*lineH);
-    label("Equipe",M,y);label("Barback",M+colW,y);y+=6;
-    doc.setFont("helvetica","normal");doc.setFontSize(12);doc.setTextColor(...ink);
-    doc.text(a,M,y,{lineHeightFactor:1.27});doc.text(b,M+colW,y,{lineHeightFactor:1.27});
-    y+=n*lineH+2;doc.setDrawColor(...line);doc.setLineWidth(.3);doc.line(M,y,W-M,y);y+=6;
-  }
-  bloco("Uniforme",v("uniforme"));
-  bloco("Observação",v("observacao"));
-  extras.forEach(x=>{const tv=(x.v||"").trim(),tt=(x.t||"").trim();if(tv||tt)bloco(tt||"Informação",tv||"—")});
-
-  // responsável
-  ensure(16);
-  doc.setDrawColor(...ink);doc.setLineWidth(.5);doc.line(M,y,W-M,y);y+=7;
-  label("Responsável",M,y);
-  doc.setFont("helvetica","bold");doc.setFontSize(14);doc.setTextColor(...ink);doc.text(v("responsavel")||"—",M,y+7);
-
-  // rodapé
-  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...mut);
-  const now=new Date();
-  doc.text(`Gerado em ${now.toLocaleDateString("pt-BR")} às ${now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`,M,287);
+  const r1=build(3000);
+  const {doc}=build(Math.max(r1.y+r1.M,170));
 
   const nome="evento-"+v("evento").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")+".pdf";
   const blob=doc.output("blob");
