@@ -79,15 +79,12 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
       <label class="full">Evento<input id="evento"></label>
       <label class="full">Local<input id="local"></label>
       <label class="full">Endereço<input id="endereco"></label>
-      <label>Data<input id="data" type="date"></label>
-      <label>Plano<input id="plano" list="planos"></label>
+      <label class="full">Data<input id="data" type="date"></label>
       <label>Início<input id="inicio" type="time"></label>
       <label>Término<input id="fim" type="time"></label>
       <label class="full">Observação do horário<textarea class="sm" id="obsHora"></textarea></label>
     </div>
   </section>
-
-  <datalist id="planos"><option value="Bronze"><option value="Prata"><option value="Ouro"><option value="Diamante"></datalist>
 
   <section class="card">
     <h2>Equipe</h2>
@@ -518,7 +515,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 //# sourceMappingURL=jspdf.umd.min.js.map
 </script>
 <script>
-const IDS=["evento","local","endereco","data","plano","inicio","fim","obsHora","equipe","barback","uniforme","observacao","responsavel"];
+const IDS=["evento","local","endereco","data","inicio","fim","obsHora","equipe","barback","uniforme","observacao","responsavel"];
 const KEY="pre-reserva-rascunho";
 const $=id=>document.getElementById(id);
 const v=id=>$(id).value.trim();
@@ -651,8 +648,7 @@ $("btnPdf").onclick=async()=>{
   const row1=c=>{const h=prep(c,CW);ensure(h);drawC(c,M,y,CW,h);y+=h+G};
 
   const hora=[v("inicio"),v("fim")].filter(Boolean).join(" às ");
-  row2({label:"Horário",parts:[{text:hora,size:17,bold:true},{text:v("obsHora"),size:10}]},
-       {label:"Plano",parts:[{text:v("plano"),size:17,bold:true}]});
+  row1({label:"Horário",parts:[{text:hora,size:17,bold:true},{text:v("obsHora"),size:10}]});
 
   if(v("equipe")||v("barback"))row2({label:"Equipe",parts:[{text:v("equipe"),size:14}]},{label:"Barback",parts:[{text:v("barback"),size:14}]});
   if(v("uniforme"))row1({label:"Uniforme",parts:[{text:v("uniforme"),size:14}]});
