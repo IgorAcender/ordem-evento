@@ -635,7 +635,7 @@ $("btnPdf").onclick=async()=>{
    const claro=(1.05)/(lum(cr.c)+.05)<4.5;
    window.PDF_THEME=Object.assign({},THEMES.grafite,{hd:cr.c,hdFg:claro?[20,20,20]:[255,255,255],hdLbl:claro?[60,60,60]:cr.l})}
   const build=PH=>{
-  const doc=new jsPDF({unit:"mm",format:[210,PH]});
+  const doc=new jsPDF({unit:"mm",format:[210,PH],orientation:PH>=210?"portrait":"landscape"});
   const W=210,M=12,CW=W-2*M,G=3.5,C2=(CW-G)/2;
   const K=[17,17,17],GR=[70,70,70],WH=[255,255,255];
   const T=Object.assign({page:null,hd:K,hdLbl:WH,bd:[60,60,60],bw:.45,fill:null,lb:GR,ic:K,dv:[60,60,60]},window.PDF_THEME||THEME);
@@ -647,24 +647,36 @@ $("btnPdf").onclick=async()=>{
   let y=M;
   const ensure=h=>{}; // página única, altura ajustada ao conteúdo
 
-  // ===== cabeçalho preto com logo =====
-  const LS=40, leftW=CW-LS-24;
+  // ===== cabeçalho de ponta a ponta (é o que aparece na prévia do WhatsApp) =====
+  {
+  const PX=M+4, LS=46, leftW=W-2*PX-LS-8;
   const nomeEv=v("evento").toUpperCase();
-  let fs=72,ev;
-  doc.setFont("helvetica","bold");
-  for(;;){doc.setFontSize(fs);ev=doc.splitTextToSize(nomeEv,leftW);if(ev.length===1||fs<=34)break;fs-=2}
-  while(ev.length>2&&fs>20){fs-=2;doc.setFontSize(fs);ev=doc.splitTextToSize(nomeEv,leftW)}
+  let sem="";
+  if(v("data")){try{sem=new Date(v("data")+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short"}).replace(".","");sem=sem.charAt(0).toUpperCase()+sem.slice(1)}catch(e){}}
+  const hr=[v("inicio"),v("fim")].filter(Boolean).join(" às ");
+  const quando=[v("data")?(sem?sem+", ":"")+dataBR(v("data")):"",hr].filter(Boolean).join("  ·  ");
+  doc.setFont("helvetica","bold");doc.setFontSize(17);
+  const locH=v("local")?doc.splitTextToSize(v("local"),leftW)[0]:"";
+  // tamanho do nome: o maior que couber, mantendo a faixa com ~64mm (área da prévia)
+  let fs=60,ev,evLH,cap,contentH;
+  for(;;){doc.setFont("helvetica","bold");doc.setFontSize(fs);ev=doc.splitTextToSize(nomeEv,leftW);
+    evLH=fs*pt*0.95;cap=fs*pt*0.72;
+    contentH=8+cap+(Math.min(ev.length,2)-1)*evLH+(locH?11:0)+(quando?8:0);
+    if((ev.length<=2&&contentH+16<=64)||fs<=20)break;fs-=2}
   ev=ev.slice(0,2);
-  const evLH=fs*pt*0.95;
-  const leftH=17+fs*pt*0.72+(ev.length-1)*evLH+8;
-  const HH=Math.max(leftH,LS+10);
-  doc.setFillColor(...T.hd);doc.roundedRect(M,y,CW,HH,3,3,"F");
-  font("bold",13,T.hdLbl);doc.text("ORDEM DE SERVIÇO",M+8,y+12,{charSpace:.6});
-  font("bold",fs,T.hdFg||WH);
-  const evTop=y+(HH-(leftH-17))/2+fs*pt*0.72+3;
-  ev.forEach((l,i)=>doc.text(l,M+7,Math.max(evTop,y+17+fs*pt*0.72)+i*evLH));
-  try{doc.addImage(LOGO,"PNG",M+CW-LS-6,y+(HH-LS)/2,LS,LS)}catch(e){}
-  y+=HH+G;
+  const HH=Math.max(64,contentH+16);
+  doc.setFillColor(...T.hd);doc.rect(0,0,W,HH,"F");
+  const fg=T.hdFg||WH;
+  let cy=(HH-contentH)/2+4;
+  font("bold",12,T.hdLbl);doc.text("ORDEM DE SERVIÇO",PX,cy,{charSpace:.6});
+  cy+=8+cap;
+  font("bold",fs,fg);ev.forEach((l,i)=>doc.text(l,PX,cy+i*evLH));
+  cy+=(ev.length-1)*evLH;
+  if(locH){cy+=11;font("bold",17,fg);doc.text(locH,PX,cy)}
+  if(quando){cy+=8;font("normal",14,fg);doc.text(quando,PX,cy)}
+  try{doc.addImage(LOGO,"PNG",W-PX-LS,(HH-LS)/2,LS,LS)}catch(e){}
+  y=HH+G+2;
+  }
 
   const LBL=(t,x,yy)=>{font("normal",10.5,T.lb);doc.text(t.toUpperCase(),x,yy,{charSpace:.2})};
   // ===== data e local (50% / 50%) =====
