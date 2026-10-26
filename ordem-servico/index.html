@@ -25,6 +25,11 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px
   padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(110px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .back{align-self:flex-start;color:var(--muted);text-decoration:none;font-weight:600;font-size:.95rem;padding:6px 0}
+.cores{display:flex;flex-wrap:wrap;gap:10px}
+.sw{width:38px;height:38px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line);padding:0;cursor:pointer;flex:none}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--fg)}
+.corNome{margin:0;font-size:.9rem;color:var(--muted)}
+.corNome b{color:var(--fg);font-weight:600}
 .eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
 h1{font-family:var(--display);font-weight:800;font-size:1.8rem;margin:2px 0 4px;letter-spacing:-.01em}
 .lead{margin:0;color:var(--muted)}
@@ -72,6 +77,12 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
     <h1>Novo evento</h1>
     <p class="lead">Preencha e toque em Gerar PDF para enviar à equipe.</p>
   </div>
+
+  <section class="card">
+    <h2>Cor do PDF</h2>
+    <div class="cores" id="cores" role="group" aria-label="Cor da faixa do PDF"></div>
+    <p class="corNome">Faixa do título: <b id="corNome"></b></p>
+  </section>
 
   <section class="card">
     <h2>Evento</h2>
@@ -570,6 +581,34 @@ function renderExtras(focusLast){
 $("addExtra").onclick=()=>{extras.push({t:"",v:""});saveExtras();renderExtras(true)};
 renderExtras();
 
+const COR_PADRAO="Grafite";
+// cor da faixa do PDF (fica salva para esta página)
+const CORES=[
+  {n:"Grafite",c:[46,46,50],l:[214,170,74]},
+  {n:"Preto",c:[20,20,20],l:[214,170,74]},
+  {n:"Laranja",c:[214,104,32],l:[255,240,220]},
+  {n:"Vermelho",c:[178,38,38],l:[255,226,220]},
+  {n:"Vinho",c:[112,28,44],l:[240,200,140]},
+  {n:"Marrom",c:[104,66,38],l:[240,206,150]},
+  {n:"Verde",c:[30,104,72],l:[220,245,225]},
+  {n:"Azul-marinho",c:[28,52,92],l:[214,170,74]},
+  {n:"Azul",c:[30,94,170],l:[225,238,255]},
+  {n:"Roxo",c:[88,44,130],l:[236,220,255]}
+];
+const COR_KEY=KEY+"-cor";
+let corSel=COR_PADRAO;
+try{const c=localStorage.getItem(COR_KEY);if(c&&CORES.some(x=>x.n===c))corSel=c}catch(e){}
+function renderCores(){
+  const box=$("cores");box.innerHTML="";
+  CORES.forEach(x=>{const b=document.createElement("button");b.type="button";b.className="sw";
+    b.style.background=`rgb(${x.c.join(",")})`;b.setAttribute("aria-label",x.n);b.title=x.n;
+    b.setAttribute("aria-pressed",x.n===corSel?"true":"false");
+    b.onclick=()=>{corSel=x.n;try{localStorage.setItem(COR_KEY,corSel)}catch(e){}renderCores()};
+    box.appendChild(b)});
+  $("corNome").textContent=corSel;
+}
+renderCores();
+
 const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2200)};
 
 // limpar com confirmação
@@ -591,6 +630,7 @@ $("btnPdf").onclick=async()=>{
   if(!window.jspdf){toast("Erro ao carregar o gerador de PDF");return}
   if(!v("evento")){toast("Preencha o nome do evento");$("evento").focus();return}
   const {jsPDF}=window.jspdf;
+  {const cr=CORES.find(x=>x.n===corSel)||CORES[0];window.PDF_THEME=Object.assign({},THEMES.grafite,{hd:cr.c,hdLbl:cr.l})}
   const build=PH=>{
   const doc=new jsPDF({unit:"mm",format:[210,PH]});
   const W=210,M=12,CW=W-2*M,G=3.5,C2=(CW-G)/2;
