@@ -26,9 +26,15 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px
 .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .back{align-self:flex-start;color:var(--muted);text-decoration:none;font-weight:600;font-size:.95rem;padding:6px 0}
 .cores{display:flex;flex-wrap:wrap;gap:10px}
+.cores[hidden]{display:none}
 .sw{width:38px;height:38px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line);padding:0;cursor:pointer;flex:none}
 .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--fg)}
-.corNome{margin:0;font-size:.9rem;color:var(--muted)}
+.corNome{flex:1;min-width:0;font-size:.95rem;color:var(--muted);text-align:left}
+.corBtn{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;font-weight:500}
+.corBtn .sw{cursor:inherit}
+.sw.sm{width:28px;height:28px;display:block}
+.corTrocar{color:var(--accent);font-weight:600;font-size:.9rem}
+.corBtn[aria-expanded="true"] .corTrocar{color:var(--muted)}
 .corNome b{color:var(--fg);font-weight:600}
 .eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
 h1{font-family:var(--display);font-weight:800;font-size:1.8rem;margin:2px 0 4px;letter-spacing:-.01em}
@@ -80,8 +86,12 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
 
   <section class="card">
     <h2>Cor do PDF</h2>
-    <div class="cores" id="cores" role="group" aria-label="Cor da faixa do PDF"></div>
-    <p class="corNome">Faixa do título: <b id="corNome"></b></p>
+    <button type="button" class="corBtn" id="corBtn" aria-expanded="false" aria-controls="cores">
+      <span class="sw sm" id="corAtual" aria-hidden="true"></span>
+      <span class="corNome">Faixa do título: <b id="corNome"></b></span>
+      <span class="corTrocar">Trocar</span>
+    </button>
+    <div class="cores" id="cores" role="group" aria-label="Escolha a cor da faixa do PDF" hidden></div>
   </section>
 
   <section class="card">
@@ -582,10 +592,13 @@ function renderCores(){
   CORES.forEach(x=>{const b=document.createElement("button");b.type="button";b.className="sw";
     b.style.background=`rgb(${x.c.join(",")})`;b.setAttribute("aria-label",x.n);b.title=x.n;
     b.setAttribute("aria-pressed",x.n===corSel?"true":"false");
-    b.onclick=()=>{corSel=x.n;try{localStorage.setItem(COR_KEY,corSel)}catch(e){}renderCores()};
+    b.onclick=()=>{corSel=x.n;try{localStorage.setItem(COR_KEY,corSel)}catch(e){}renderCores();abrirCores(false);toast("Cor: "+x.n)};
     box.appendChild(b)});
   $("corNome").textContent=corSel;
+  const at=CORES.find(x=>x.n===corSel)||CORES[0];$("corAtual").style.background=`rgb(${at.c.join(",")})`;
 }
+function abrirCores(on){$("cores").hidden=!on;$("corBtn").setAttribute("aria-expanded",on?"true":"false");$("corBtn").querySelector(".corTrocar").textContent=on?"Fechar":"Trocar"}
+$("corBtn").onclick=()=>abrirCores($("cores").hidden);
 renderCores();
 
 const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2200)};
