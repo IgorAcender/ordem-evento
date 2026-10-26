@@ -586,7 +586,7 @@ const COR_PADRAO="Grafite";
 const CORES=[
   {n:"Grafite",c:[46,46,50],l:[214,170,74]},
   {n:"Preto",c:[20,20,20],l:[214,170,74]},
-  {n:"Laranja",c:[214,104,32],l:[255,240,220]},
+  {n:"Laranja",c:[196,82,20],l:[255,255,255]},
   {n:"Vermelho",c:[178,38,38],l:[255,226,220]},
   {n:"Vinho",c:[112,28,44],l:[240,200,140]},
   {n:"Marrom",c:[104,66,38],l:[240,206,150]},
@@ -630,7 +630,10 @@ $("btnPdf").onclick=async()=>{
   if(!window.jspdf){toast("Erro ao carregar o gerador de PDF");return}
   if(!v("evento")){toast("Preencha o nome do evento");$("evento").focus();return}
   const {jsPDF}=window.jspdf;
-  {const cr=CORES.find(x=>x.n===corSel)||CORES[0];window.PDF_THEME=Object.assign({},THEMES.grafite,{hd:cr.c,hdLbl:cr.l})}
+  {const cr=CORES.find(x=>x.n===corSel)||CORES[0];// contraste automático: fundo claro -> texto escuro; fundo escuro -> texto claro
+   const lum=c=>{const r=c.map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)});return .2126*r[0]+.7152*r[1]+.0722*r[2]};
+   const claro=(1.05)/(lum(cr.c)+.05)<4.5;
+   window.PDF_THEME=Object.assign({},THEMES.grafite,{hd:cr.c,hdFg:claro?[20,20,20]:[255,255,255],hdLbl:claro?[60,60,60]:cr.l})}
   const build=PH=>{
   const doc=new jsPDF({unit:"mm",format:[210,PH]});
   const W=210,M=12,CW=W-2*M,G=3.5,C2=(CW-G)/2;
@@ -657,7 +660,7 @@ $("btnPdf").onclick=async()=>{
   const HH=Math.max(leftH,LS+10);
   doc.setFillColor(...T.hd);doc.roundedRect(M,y,CW,HH,3,3,"F");
   font("bold",13,T.hdLbl);doc.text("ORDEM DE SERVIÇO",M+8,y+12,{charSpace:.6});
-  font("bold",fs,WH);
+  font("bold",fs,T.hdFg||WH);
   const evTop=y+(HH-(leftH-17))/2+fs*pt*0.72+3;
   ev.forEach((l,i)=>doc.text(l,M+7,Math.max(evTop,y+17+fs*pt*0.72)+i*evLH));
   try{doc.addImage(LOGO,"PNG",M+CW-LS-6,y+(HH-LS)/2,LS,LS)}catch(e){}
