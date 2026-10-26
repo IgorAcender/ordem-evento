@@ -634,13 +634,13 @@ $("btnPdf").onclick=async()=>{
   if(v("data")){try{sem=new Date(v("data")+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short"}).replace(".","");sem=sem.charAt(0).toUpperCase()+sem.slice(1)}catch(e){}}
   const hr=[v("inicio"),v("fim")].filter(Boolean).join(" às ");
   const quando=[v("data")?(sem?sem+", ":"")+dataBR(v("data")):"",hr].filter(Boolean).join("  ·  ");
-  doc.setFont("helvetica","bold");doc.setFontSize(17);
+  doc.setFont("helvetica","bold");doc.setFontSize(22);
   const locH=v("local")?doc.splitTextToSize(v("local"),leftW)[0]:"";
   // tamanho do nome: o maior que couber, mantendo a faixa com ~64mm (área da prévia)
-  let fs=60,ev,evLH,cap,contentH;
+  let fs=44,ev,evLH,cap,contentH;
   for(;;){doc.setFont("helvetica","bold");doc.setFontSize(fs);ev=doc.splitTextToSize(nomeEv,leftW);
     evLH=fs*pt*0.95;cap=fs*pt*0.72;
-    contentH=8+cap+(Math.min(ev.length,2)-1)*evLH+(locH?11:0)+(quando?8:0);
+    contentH=8+cap+(Math.min(ev.length,2)-1)*evLH+(locH?13:0)+(quando?9.5:0);
     if((ev.length<=2&&contentH+16<=64)||fs<=20)break;fs-=2}
   ev=ev.slice(0,2);
   const HH=Math.max(64,contentH+16);
@@ -651,8 +651,8 @@ $("btnPdf").onclick=async()=>{
   cy+=8+cap;
   font("bold",fs,fg);ev.forEach((l,i)=>doc.text(l,PX,cy+i*evLH));
   cy+=(ev.length-1)*evLH;
-  if(locH){cy+=11;font("bold",17,fg);doc.text(locH,PX,cy)}
-  if(quando){cy+=8;font("normal",14,fg);doc.text(quando,PX,cy)}
+  if(locH){cy+=13;font("bold",22,fg);doc.text(locH,PX,cy)}
+  if(quando){cy+=9.5;font("bold",17,fg);doc.text(quando,PX,cy)}
   try{doc.addImage(LOGO,"PNG",W-PX-LS,(HH-LS)/2,LS,LS)}catch(e){}
   y=HH+G+2;
   }
