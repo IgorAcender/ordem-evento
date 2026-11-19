@@ -143,6 +143,13 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
   </section>
 
   <section class="card">
+    <h2>Frase do rodapé</h2>
+    <label>Texto abaixo dos drinks<input id="rodape" maxlength="90" autocomplete="off"></label>
+    <p class="mstatus">Use • para separar as partes. Deixe em branco para não mostrar.</p>
+    <div class="row"><button type="button" id="rodPadrao">Voltar ao texto padrão</button></div>
+  </section>
+
+  <section class="card">
     <h2>Banco de drinks <small id="bCount"></small></h2>
     <p class="mstatus">Drinks guardados para usar em qualquer menu.</p>
     <button type="button" id="bToggle" class="lnk left" aria-expanded="false">Ver e editar o banco</button>
@@ -608,6 +615,13 @@ function renderItems(focusIdx){
 }
 $("add").onclick=()=>{if(items.length>=MAX)return;items.push({t:"",d:""});save();renderItems(items.length-1);schedule()};
 
+/* ---------- frase do rodapé ---------- */
+const ROD_PADRAO="Bons drinks • Boas companhias • Grandes momentos", ROD_KEY=KEY+"-rodape";
+let rodape=ROD_PADRAO;try{const r=localStorage.getItem(ROD_KEY);if(r!==null)rodape=r}catch(e){}
+$("rodape").value=rodape;
+$("rodape").oninput=()=>{rodape=$("rodape").value;try{localStorage.setItem(ROD_KEY,rodape)}catch(e){}schedule()};
+$("rodPadrao").onclick=()=>{rodape=ROD_PADRAO;$("rodape").value=rodape;try{localStorage.setItem(ROD_KEY,rodape)}catch(e){}schedule();toast("Frase padrão restaurada")};
+
 /* ---------- banco de drinks ---------- */
 const BANCO_KEY=KEY+"-banco";
 let banco;
@@ -768,9 +782,9 @@ function drawMenu(cv,list){
   });
   // rodapé
   ctx.fillStyle=GOLD_T;let fz=3.4;ctx.font=`700 ${fz}px Lato, Helvetica, Arial, sans-serif`;
-  const FT="BONS DRINKS  •  BOAS COMPANHIAS  •  GRANDES MOMENTOS";let fsp=1;
-  while(spacedW(ctx,FT,fsp)>176&&fz>2.4){fz-=.1;ctx.font=`700 ${fz}px Lato, Helvetica, Arial, sans-serif`}
-  spaced(ctx,FT,A4W/2,261,fsp);
+  const FT=(typeof rodape==="string"?rodape:"").trim().toUpperCase().replace(/\s*•\s*/g,"  •  ");let fsp=1;
+  while(spacedW(ctx,FT,fsp)>176&&fz>1.8){fz-=.1;fsp=Math.max(.4,fsp-.03);ctx.font=`700 ${fz}px Lato, Helvetica, Arial, sans-serif`}
+  if(FT)spaced(ctx,FT,A4W/2,261,fsp);
   hline(ctx,58,96,273,.3);hline(ctx,114,152,273,.3);glass(ctx,A4W/2,268);
 }
 
