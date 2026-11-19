@@ -805,7 +805,7 @@ const TEMAS={
       ctx.strokeStyle=gold(ctx,0,0,A4W,A4H);ctx.lineWidth=.5;ctx.strokeRect(6,6,A4W-12,A4H-12);ctx.lineWidth=.18;ctx.strokeRect(7.8,7.8,A4W-15.6,A4H-15.6);
       ctx.save();ctx.scale(.9,.9);corner(ctx);ctx.restore();ctx.save();ctx.translate(A4W,A4H);ctx.rotate(Math.PI);ctx.scale(.9,.9);corner(ctx);ctx.restore()},
     logo:"dourado",titulo:"#1c1813",nome:"#1c1813",desc:"#2a241d",rodape:"#a8761c",
-    card(ctx,x,y,w,h,s){ctx.save();ctx.shadowColor="rgba(120,85,25,.16)";ctx.shadowBlur=2.2*s;ctx.shadowOffsetY=.5*s;rrect(ctx,x,y,w,h,3);ctx.fillStyle="rgba(255,255,255,.72)";ctx.fill();ctx.restore();
+    card(ctx,x,y,w,h,s){ctx.save();ctx.shadowColor="rgba(120,85,25,.16)";ctx.shadowBlur=2.2*s;ctx.shadowOffsetY=.5*s;rrect(ctx,x,y,w,h,3);ctx.fillStyle="#ffffff";ctx.fill();ctx.restore();
       rrect(ctx,x,y,w,h,3);ctx.strokeStyle=gold(ctx,x,y,x+w,y+h);ctx.lineWidth=.4;ctx.stroke()}},
   botanica:{nome:"Botânico",
     bg(ctx){ctx.fillStyle="#ffffff";ctx.fillRect(0,0,A4W,A4H); // fundo branco (melhor para impressão)
@@ -815,7 +815,7 @@ const TEMAS={
       ctx.save();ctx.translate(0,A4H);ctx.scale(1,-1);const d2=Math.PI/180;leafLine(ctx,-2,-2,40*d2,44,9);leafLine(ctx,-2,-2,62*d2,36,8);ctx.restore();
       ctx.strokeStyle=goldText(ctx,0,0,A4W,A4H);ctx.lineWidth=.35;rrect(ctx,8,8,A4W-16,A4H-16,6);ctx.stroke()},
     logo:"dourado",titulo:"#1f4535",nome:"#1f4535",desc:"#34423b",rodape:"#2f6b4f",
-    card(ctx,x,y,w,h,s){ctx.save();ctx.shadowColor="rgba(31,69,53,.14)";ctx.shadowBlur=2.6*s;ctx.shadowOffsetY=.6*s;rrect(ctx,x,y,w,h,6);ctx.fillStyle="rgba(255,255,255,.93)";ctx.fill();ctx.restore();
+    card(ctx,x,y,w,h,s){ctx.save();ctx.shadowColor="rgba(31,69,53,.14)";ctx.shadowBlur=2.6*s;ctx.shadowOffsetY=.6*s;rrect(ctx,x,y,w,h,6);ctx.fillStyle="#ffffff";ctx.fill();ctx.restore();
       rrect(ctx,x,y,w,h,6);ctx.strokeStyle="#9fb8a6";ctx.lineWidth=.3;ctx.stroke()}}
 };
 let tema="classico";
