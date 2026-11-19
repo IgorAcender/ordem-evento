@@ -69,6 +69,21 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
 .ico i{display:block;background:currentColor;opacity:.35;border-radius:1px}
 .ico.one{width:26px;height:36px}.ico.one i{flex:1}
 .ico.two{width:44px;height:31px}.ico.two i{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:9px 14px;border-radius:999px;font-size:.95rem;background:var(--bg)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.mstatus{margin:0;font-size:.9rem;color:var(--muted)}
+.mstatus b{color:var(--fg)}
+.mstatus .warn{color:#b9541a;font-weight:600}
+.row{display:flex;gap:8px}
+.row.wrap{display:grid;grid-template-columns:1fr 1fr}
+.row button{flex:1 1 auto;padding:11px 12px;font-size:.92rem}
+.row button:disabled{opacity:.45;cursor:default}
+.row .yes{background:var(--accent);border-color:var(--accent);color:#fff}
+.row .del{color:#c0392b}
+.mconfirm,.mnew{display:grid;gap:10px;padding:12px;border-radius:12px;background:var(--accent-soft)}
+.mconfirm[hidden],.mnew[hidden]{display:none}
+.mconfirm span{font-size:.95rem;font-weight:500}
 .pdfLink{display:block;text-align:center;padding:14px;border:2px dashed var(--accent);border-radius:12px;color:var(--accent);font-weight:600;text-decoration:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -96,6 +111,23 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
   </section>
 
   <section class="card">
+    <h2>Modelos salvos</h2>
+    <div id="modelos" class="chips" role="group" aria-label="Modelos salvos"></div>
+    <p class="mstatus" id="mStatus"></p>
+    <div id="mConfirm" class="mconfirm" hidden><span id="mConfTxt"></span><div class="row"><button type="button" id="mNo">Cancelar</button><button type="button" id="mYes" class="yes">Sim</button></div></div>
+    <div id="mNewBox" class="mnew" hidden>
+      <label>Nome do novo modelo<input id="mName" placeholder="Ex.: Casamento, 15 anos, Corporativo"></label>
+      <div class="row"><button type="button" id="mNewCancel">Cancelar</button><button type="button" id="mNewOk" class="yes">Salvar modelo</button></div>
+    </div>
+    <div class="row wrap">
+      <button type="button" id="mSave">Salvar alterações</button>
+      <button type="button" id="mSaveNew">Salvar como novo</button>
+      <button type="button" id="mZero">Começar do zero</button>
+      <button type="button" id="mDel" class="del">Excluir modelo</button>
+    </div>
+  </section>
+
+  <section class="card">
     <h2>Drinks <small id="count"></small></h2>
     <div id="items" class="items"></div>
     <button type="button" id="add" class="add">+ Adicionar drink</button>
@@ -103,8 +135,6 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
 </div>
 
 <div class="bar"><div class="in">
-  <button id="btnReset" type="button">Restaurar</button>
-  <div class="confirm" id="confirm"><span>Voltar aos 8 drinks padrão?</span><button id="yes" type="button">Sim</button><button id="no" type="button">Não</button></div>
   <button class="primary" id="btnPdf" type="button">Gerar PDF</button>
 </div></div>
 <div class="toast" id="toast" role="status"></div>
@@ -525,7 +555,7 @@ const PADRAO=[
 let items;
 try{items=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!Array.isArray(items))items=PADRAO.map(x=>({...x}));
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}if(typeof renderMods==="function")renderMods()};
 const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2200)};
 const grow=t=>{t.style.height="auto";t.style.height=t.scrollHeight+2+"px"};
 
@@ -558,10 +588,49 @@ function renderItems(focusIdx){
 }
 $("add").onclick=()=>{if(items.length>=MAX)return;items.push({t:"",d:""});save();renderItems(items.length-1);schedule()};
 
-$("btnReset").onclick=()=>{$("confirm").classList.add("on");$("btnReset").hidden=true;$("btnPdf").hidden=true};
-const closeC=()=>{$("confirm").classList.remove("on");$("btnReset").hidden=false;$("btnPdf").hidden=false};
-$("no").onclick=closeC;
-$("yes").onclick=()=>{items=PADRAO.map(x=>({...x}));save();renderItems();schedule();closeC();toast("Menu restaurado")};
+/* ---------- modelos salvos ---------- */
+const MOD_KEY=KEY+"-modelos", CUR_KEY=KEY+"-atual";
+let modelos,cur=null;
+try{modelos=JSON.parse(localStorage.getItem(MOD_KEY))}catch(e){}
+if(!Array.isArray(modelos))modelos=[{n:"Padrão Auge",i:PADRAO.map(x=>({...x}))}];
+try{cur=localStorage.getItem(CUR_KEY)}catch(e){}
+if(cur&&!modelos.some(m=>m.n===cur))cur=null;
+if(cur===null&&!localStorage.getItem(KEY)&&modelos[0])cur=modelos[0].n;
+const saveMods=()=>{try{localStorage.setItem(MOD_KEY,JSON.stringify(modelos));if(cur)localStorage.setItem(CUR_KEY,cur);else localStorage.removeItem(CUR_KEY)}catch(e){}};
+const clean=l=>l.map(x=>({t:(x.t||"").trim(),d:(x.d||"").trim()})).filter(x=>x.t||x.d);
+const modAtual=()=>modelos.find(m=>m.n===cur);
+const dirty=()=>{const m=modAtual();return m?JSON.stringify(clean(items))!==JSON.stringify(clean(m.i)):clean(items).length>0};
+let pend=null;
+function ask(txt,fn){pend=fn;$("mConfTxt").textContent=txt;$("mConfirm").hidden=false;$("mNewBox").hidden=true}
+$("mYes").onclick=()=>{const f=pend;pend=null;$("mConfirm").hidden=true;f&&f()};
+$("mNo").onclick=()=>{pend=null;$("mConfirm").hidden=true};
+function carregar(m){items=m.i.map(x=>({...x}));cur=m.n;save();saveMods();renderItems();renderMods();schedule();toast("Modelo "+m.n+" carregado")}
+function renderMods(){
+  const box=$("modelos");box.innerHTML="";
+  modelos.forEach(m=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=m.n;
+    b.setAttribute("aria-pressed",m.n===cur?"true":"false");
+    b.onclick=()=>{if(m.n===cur&&!dirty())return;
+      if(dirty())ask(`Trocar para "${m.n}"? O que não foi salvo será perdido.`,()=>carregar(m));else carregar(m)};
+    box.appendChild(b)});
+  const d=dirty();
+  $("mStatus").innerHTML=cur?`Editando: <b></b>${d?' · <span class="warn">alterações não salvas</span>':' · salvo'}`:`Menu novo${d?' · <span class="warn">não salvo</span>':''}`;
+  if(cur)$("mStatus").querySelector("b").textContent=cur;
+  $("mSave").hidden=!cur;$("mSave").disabled=!d;
+  $("mDel").hidden=!cur;
+}
+$("mSave").onclick=()=>{const m=modAtual();if(!m)return;m.i=clean(items);saveMods();renderMods();toast("Modelo "+m.n+" salvo")};
+$("mSaveNew").onclick=()=>{$("mNewBox").hidden=false;$("mConfirm").hidden=true;$("mName").value="";$("mName").focus()};
+$("mNewCancel").onclick=()=>{$("mNewBox").hidden=true};
+$("mNewOk").onclick=()=>{
+  const n=$("mName").value.trim();if(!n){toast("Dê um nome ao modelo");$("mName").focus();return}
+  const fazer=()=>{const ex=modelos.find(m=>m.n===n);if(ex)ex.i=clean(items);else modelos.push({n,i:clean(items)});
+    cur=n;saveMods();$("mNewBox").hidden=true;renderMods();toast("Modelo "+n+" salvo")};
+  if(modelos.some(m=>m.n===n))ask(`Já existe "${n}". Substituir?`,fazer);else fazer();
+};
+$("mName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("mNewOk").click()}});
+$("mZero").onclick=()=>{const go=()=>{items=[];cur=null;save();saveMods();renderItems();renderMods();schedule();toast("Menu em branco")};
+  if(clean(items).length)ask("Começar um menu do zero? Os drinks da tela serão apagados (os modelos salvos continuam).",go);else go()};
+$("mDel").onclick=()=>{const n=cur;ask(`Excluir o modelo "${n}"? Os drinks continuam na tela.`,()=>{modelos=modelos.filter(m=>m.n!==n);cur=null;saveMods();renderMods();toast("Modelo excluído")})};
 
 /* ---------- desenho da folha A4 (unidades em mm) ---------- */
 const A4W=210,A4H=297;
@@ -661,6 +730,7 @@ const logoReady=new Promise(r=>{if(LOGO.complete)r();else{LOGO.onload=r;LOGO.one
 let tm=null;
 function schedule(){clearTimeout(tm);tm=setTimeout(()=>drawMenu($("preview"),items),120)}
 renderItems();
+renderMods();
 Promise.all([fontsReady(),logoReady]).then(()=>drawMenu($("preview"),items));
 drawMenu($("preview"),items);
 
