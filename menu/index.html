@@ -84,6 +84,24 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
 .mconfirm,.mnew{display:grid;gap:10px;padding:12px;border-radius:12px;background:var(--accent-soft)}
 .mconfirm[hidden],.mnew[hidden]{display:none}
 .mconfirm span{font-size:.95rem;font-weight:500}
+.picker{display:grid;gap:10px;padding:12px;border-radius:12px;background:var(--accent-soft)}
+.picker[hidden],.blist[hidden],#bNovo[hidden]{display:none}
+.phead{display:flex;justify-content:space-between;align-items:center}
+.lnk{border:0;background:none;padding:6px 2px;color:var(--accent);font-weight:600}
+.lnk.left{justify-self:start}
+.plist{display:grid;gap:8px;max-height:52vh;overflow:auto}
+.pi{display:grid;gap:2px;text-align:left;padding:10px 12px;background:var(--surface)}
+.pi b{text-transform:uppercase;font-size:.95rem}
+.pi span{color:var(--muted);font-weight:400;font-size:.88rem}
+.pi:disabled{opacity:.5;cursor:default}
+.pi em{font-style:normal;color:var(--accent);font-size:.78rem;font-weight:600}
+.vazio{margin:0;color:var(--muted);font-size:.9rem}
+.blist{display:grid;gap:8px}
+.bi{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+.bi .txt b{display:block;text-transform:uppercase;font-size:.95rem}
+.bi .txt span{color:var(--muted);font-size:.88rem}
+.bi .row button{padding:8px 10px;font-size:.88rem}
+.acts .sb{color:var(--accent);margin-right:auto}
 .pdfLink{display:block;text-align:center;padding:14px;border:2px dashed var(--accent);border-radius:12px;color:var(--accent);font-weight:600;text-decoration:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -111,26 +129,25 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
   </section>
 
   <section class="card">
-    <h2>Modelos salvos</h2>
-    <div id="modelos" class="chips" role="group" aria-label="Modelos salvos"></div>
-    <p class="mstatus" id="mStatus"></p>
-    <div id="mConfirm" class="mconfirm" hidden><span id="mConfTxt"></span><div class="row"><button type="button" id="mNo">Cancelar</button><button type="button" id="mYes" class="yes">Sim</button></div></div>
-    <div id="mNewBox" class="mnew" hidden>
-      <label>Nome do novo modelo<input id="mName" placeholder="Ex.: Casamento, 15 anos, Corporativo"></label>
-      <div class="row"><button type="button" id="mNewCancel">Cancelar</button><button type="button" id="mNewOk" class="yes">Salvar modelo</button></div>
-    </div>
-    <div class="row wrap">
-      <button type="button" id="mSave">Salvar alterações</button>
-      <button type="button" id="mSaveNew">Salvar como novo</button>
-      <button type="button" id="mZero">Começar do zero</button>
-      <button type="button" id="mDel" class="del">Excluir modelo</button>
-    </div>
-  </section>
-
-  <section class="card">
     <h2>Drinks <small id="count"></small></h2>
     <div id="items" class="items"></div>
     <button type="button" id="add" class="add">+ Adicionar drink</button>
+    <div id="picker" class="picker" hidden>
+      <div class="phead"><b>Escolha do banco</b><button type="button" id="pFechar" class="lnk">Fechar</button></div>
+      <input id="busca" type="search" placeholder="Buscar drink" aria-label="Buscar drink no banco" autocomplete="off">
+      <div id="plist" class="plist"></div>
+      <button type="button" id="pNovo" class="add">+ Criar drink novo</button>
+    </div>
+    <div class="row"><button type="button" id="limpar" class="del">Limpar menu</button></div>
+    <div id="lConfirm" class="mconfirm" hidden><span>Tirar todos os drinks do menu? O banco de drinks continua salvo.</span><div class="row"><button type="button" id="lNo">Cancelar</button><button type="button" id="lYes" class="yes">Sim, limpar</button></div></div>
+  </section>
+
+  <section class="card">
+    <h2>Banco de drinks <small id="bCount"></small></h2>
+    <p class="mstatus">Drinks guardados para usar em qualquer menu.</p>
+    <button type="button" id="bToggle" class="lnk left" aria-expanded="false">Ver e editar o banco</button>
+    <div id="banco" class="blist" hidden></div>
+    <button type="button" id="bNovo" class="add" hidden>+ Novo drink no banco</button>
   </section>
 </div>
 
@@ -555,7 +572,7 @@ const PADRAO=[
 let items;
 try{items=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!Array.isArray(items))items=PADRAO.map(x=>({...x}));
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}if(typeof renderMods==="function")renderMods()};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}};
 const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2200)};
 const grow=t=>{t.style.height="auto";t.style.height=t.scrollHeight+2+"px"};
 
@@ -566,11 +583,14 @@ function renderItems(focusIdx){
     const d=document.createElement("div");d.className="item";
     d.innerHTML=`<div class="top"><span class="num">${i+1}</span><input class="tit" id="t_${i}" placeholder="Nome do drink" aria-label="Nome do drink ${i+1}"></div>
       <textarea id="d_${i}" placeholder="Ingredientes" aria-label="Descrição do drink ${i+1}"></textarea>
-      <div class="acts"><button type="button" class="up" aria-label="Subir">↑</button><button type="button" class="down" aria-label="Descer">↓</button><button type="button" class="rm">Remover</button></div>`;
+      <div class="acts"><button type="button" class="sb" hidden>Salvar no banco</button><button type="button" class="up" aria-label="Subir">↑</button><button type="button" class="down" aria-label="Descer">↓</button><button type="button" class="rm">Remover</button></div>`;
     const t=d.querySelector("input"),ta=d.querySelector("textarea");
     t.value=x.t||"";ta.value=x.d||"";
-    t.oninput=()=>{x.t=t.value;save();schedule()};
-    ta.oninput=()=>{x.d=ta.value;save();grow(ta);schedule()};
+    const sb=d.querySelector(".sb");
+    t.oninput=()=>{x.t=t.value;save();schedule();bancoBtn(sb,x)};
+    ta.oninput=()=>{x.d=ta.value;save();grow(ta);schedule();bancoBtn(sb,x)};
+    sb.onclick=()=>{guardar(x);bancoBtn(sb,x)};
+    if(typeof bancoBtn==="function"&&typeof banco!=="undefined")bancoBtn(sb,x);
     const up=d.querySelector(".up"),dn=d.querySelector(".down"),rm=d.querySelector(".rm");
     up.disabled=i===0;dn.disabled=i===items.length-1;
     up.onclick=()=>{[items[i-1],items[i]]=[items[i],items[i-1]];save();renderItems();schedule()};
@@ -588,49 +608,80 @@ function renderItems(focusIdx){
 }
 $("add").onclick=()=>{if(items.length>=MAX)return;items.push({t:"",d:""});save();renderItems(items.length-1);schedule()};
 
-/* ---------- modelos salvos ---------- */
-const MOD_KEY=KEY+"-modelos", CUR_KEY=KEY+"-atual";
-let modelos,cur=null;
-try{modelos=JSON.parse(localStorage.getItem(MOD_KEY))}catch(e){}
-if(!Array.isArray(modelos))modelos=[{n:"Padrão Auge",i:PADRAO.map(x=>({...x}))}];
-try{cur=localStorage.getItem(CUR_KEY)}catch(e){}
-if(cur&&!modelos.some(m=>m.n===cur))cur=null;
-if(cur===null&&!localStorage.getItem(KEY)&&modelos[0])cur=modelos[0].n;
-const saveMods=()=>{try{localStorage.setItem(MOD_KEY,JSON.stringify(modelos));if(cur)localStorage.setItem(CUR_KEY,cur);else localStorage.removeItem(CUR_KEY)}catch(e){}};
-const clean=l=>l.map(x=>({t:(x.t||"").trim(),d:(x.d||"").trim()})).filter(x=>x.t||x.d);
-const modAtual=()=>modelos.find(m=>m.n===cur);
-const dirty=()=>{const m=modAtual();return m?JSON.stringify(clean(items))!==JSON.stringify(clean(m.i)):clean(items).length>0};
-let pend=null;
-function ask(txt,fn){pend=fn;$("mConfTxt").textContent=txt;$("mConfirm").hidden=false;$("mNewBox").hidden=true}
-$("mYes").onclick=()=>{const f=pend;pend=null;$("mConfirm").hidden=true;f&&f()};
-$("mNo").onclick=()=>{pend=null;$("mConfirm").hidden=true};
-function carregar(m){items=m.i.map(x=>({...x}));cur=m.n;save();saveMods();renderItems();renderMods();schedule();toast("Modelo "+m.n+" carregado")}
-function renderMods(){
-  const box=$("modelos");box.innerHTML="";
-  modelos.forEach(m=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=m.n;
-    b.setAttribute("aria-pressed",m.n===cur?"true":"false");
-    b.onclick=()=>{if(m.n===cur&&!dirty())return;
-      if(dirty())ask(`Trocar para "${m.n}"? O que não foi salvo será perdido.`,()=>carregar(m));else carregar(m)};
-    box.appendChild(b)});
-  const d=dirty();
-  $("mStatus").innerHTML=cur?`Editando: <b></b>${d?' · <span class="warn">alterações não salvas</span>':' · salvo'}`:`Menu novo${d?' · <span class="warn">não salvo</span>':''}`;
-  if(cur)$("mStatus").querySelector("b").textContent=cur;
-  $("mSave").hidden=!cur;$("mSave").disabled=!d;
-  $("mDel").hidden=!cur;
+/* ---------- banco de drinks ---------- */
+const BANCO_KEY=KEY+"-banco";
+let banco;
+try{banco=JSON.parse(localStorage.getItem(BANCO_KEY))}catch(e){}
+if(!Array.isArray(banco))banco=PADRAO.map(x=>({...x}));
+const saveBanco=()=>{try{localStorage.setItem(BANCO_KEY,JSON.stringify(banco))}catch(e){}};
+const norm=t=>(t||"").trim().toLowerCase();
+const noBanco=t=>banco.find(b=>norm(b.t)===norm(t));
+const noMenu=t=>items.some(x=>norm(x.t)===norm(t));
+banco.sort((a,b)=>a.t.localeCompare(b.t,"pt-BR"));
+
+// botão "Salvar no banco" em cada quadradinho do menu
+function bancoBtn(btn,x){
+  const t=(x.t||"").trim(),b=t&&noBanco(t);
+  if(!t){btn.hidden=true;return}
+  if(!b){btn.hidden=false;btn.textContent="Salvar no banco";return}
+  if((b.d||"").trim()!==(x.d||"").trim()){btn.hidden=false;btn.textContent="Atualizar no banco";return}
+  btn.hidden=true;
 }
-$("mSave").onclick=()=>{const m=modAtual();if(!m)return;m.i=clean(items);saveMods();renderMods();toast("Modelo "+m.n+" salvo")};
-$("mSaveNew").onclick=()=>{$("mNewBox").hidden=false;$("mConfirm").hidden=true;$("mName").value="";$("mName").focus()};
-$("mNewCancel").onclick=()=>{$("mNewBox").hidden=true};
-$("mNewOk").onclick=()=>{
-  const n=$("mName").value.trim();if(!n){toast("Dê um nome ao modelo");$("mName").focus();return}
-  const fazer=()=>{const ex=modelos.find(m=>m.n===n);if(ex)ex.i=clean(items);else modelos.push({n,i:clean(items)});
-    cur=n;saveMods();$("mNewBox").hidden=true;renderMods();toast("Modelo "+n+" salvo")};
-  if(modelos.some(m=>m.n===n))ask(`Já existe "${n}". Substituir?`,fazer);else fazer();
-};
-$("mName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("mNewOk").click()}});
-$("mZero").onclick=()=>{const go=()=>{items=[];cur=null;save();saveMods();renderItems();renderMods();schedule();toast("Menu em branco")};
-  if(clean(items).length)ask("Começar um menu do zero? Os drinks da tela serão apagados (os modelos salvos continuam).",go);else go()};
-$("mDel").onclick=()=>{const n=cur;ask(`Excluir o modelo "${n}"? Os drinks continuam na tela.`,()=>{modelos=modelos.filter(m=>m.n!==n);cur=null;saveMods();renderMods();toast("Modelo excluído")})};
+function guardar(x){const t=(x.t||"").trim();if(!t)return;const b=noBanco(t);
+  if(b){b.t=t;b.d=(x.d||"").trim();toast(t+" atualizado no banco")}else{banco.push({t,d:(x.d||"").trim()});toast(t+" salvo no banco")}
+  banco.sort((a,b)=>a.t.localeCompare(b.t,"pt-BR"));saveBanco();renderBanco()}
+
+// escolher do banco ao adicionar
+function renderPicker(){
+  const q=norm($("busca").value),box=$("plist");box.innerHTML="";
+  const lista=banco.filter(b=>!q||norm(b.t).includes(q)||norm(b.d).includes(q));
+  if(!lista.length){const p=document.createElement("p");p.className="vazio";p.textContent=banco.length?"Nenhum drink encontrado.":"O banco está vazio. Crie um drink novo.";box.appendChild(p)}
+  lista.forEach(b=>{const el=document.createElement("button");el.type="button";el.className="pi";
+    const ja=noMenu(b.t);el.disabled=ja;
+    el.innerHTML="<b></b><span></span>"+(ja?"<em>Já está no menu</em>":"");
+    el.querySelector("b").textContent=b.t;el.querySelector("span").textContent=b.d;
+    el.onclick=()=>{if(items.length>=MAX)return;items.push({t:b.t,d:b.d});save();renderItems();schedule();toast(b.t+" adicionado");
+      if(items.length>=MAX)fecharPicker();else renderPicker()};
+    box.appendChild(el)});
+}
+function abrirPicker(){$("picker").hidden=false;$("add").hidden=true;$("busca").value="";renderPicker()}
+function fecharPicker(){$("picker").hidden=true;$("add").hidden=false}
+$("add").onclick=()=>{if(items.length>=MAX)return;abrirPicker()};
+$("pFechar").onclick=fecharPicker;
+$("busca").oninput=renderPicker;
+$("pNovo").onclick=()=>{if(items.length>=MAX)return;fecharPicker();items.push({t:"",d:""});save();renderItems(items.length-1);schedule()};
+
+// limpar menu
+$("limpar").onclick=()=>{$("lConfirm").hidden=false};
+$("lNo").onclick=()=>{$("lConfirm").hidden=true};
+$("lYes").onclick=()=>{items=[];save();renderItems();schedule();$("lConfirm").hidden=true;toast("Menu limpo")};
+
+// gerenciar banco
+let editIdx=null,novoBanco=false;
+function renderBanco(){
+  $("bCount").textContent=banco.length+(banco.length===1?" drink":" drinks");
+  const box=$("banco");box.innerHTML="";
+  const form=(t,d,onOk,onCancel,onDel)=>{const el=document.createElement("div");el.className="bi";
+    el.innerHTML=`<input class="tit" placeholder="Nome do drink" aria-label="Nome do drink"><textarea placeholder="Ingredientes" aria-label="Descrição"></textarea>
+      <div class="row"><button type="button" class="c">Cancelar</button>${onDel?'<button type="button" class="del x">Excluir</button>':''}<button type="button" class="yes ok">Salvar</button></div>`;
+    const ti=el.querySelector("input"),ta=el.querySelector("textarea");ti.value=t;ta.value=d;
+    ta.oninput=()=>grow(ta);
+    el.querySelector(".ok").onclick=()=>{const nt=ti.value.trim();if(!nt){toast("Dê um nome ao drink");ti.focus();return}onOk(nt,ta.value.trim())};
+    el.querySelector(".c").onclick=onCancel;
+    if(onDel){const x=el.querySelector(".x");x.onclick=()=>{if(!x.classList.contains("sure")){x.classList.add("sure");x.textContent="Confirmar";setTimeout(()=>{x.classList.remove("sure");x.textContent="Excluir"},3000);return}onDel()}}
+    setTimeout(()=>grow(ta));return [el,ti]};
+  if(novoBanco){const [el,ti]=form("","",(t,d)=>{const b=noBanco(t);if(b){b.d=d}else banco.push({t,d});banco.sort((a,b)=>a.t.localeCompare(b.t,"pt-BR"));saveBanco();novoBanco=false;renderBanco();toast(t+" salvo no banco")},()=>{novoBanco=false;renderBanco()});box.appendChild(el);setTimeout(()=>ti.focus())}
+  banco.forEach((b,i)=>{
+    if(i===editIdx){const [el]=form(b.t,b.d,(t,d)=>{const dup=banco.findIndex((o,k)=>k!==i&&norm(o.t)===norm(t));if(dup>=0){toast("Já existe um drink com esse nome");return}b.t=t;b.d=d;banco.sort((a,c)=>a.t.localeCompare(c.t,"pt-BR"));saveBanco();editIdx=null;renderBanco();renderItems();toast("Drink atualizado no banco")},()=>{editIdx=null;renderBanco()},()=>{banco.splice(i,1);saveBanco();editIdx=null;renderBanco();renderItems();toast("Drink excluído do banco")});box.appendChild(el);return}
+    const el=document.createElement("div");el.className="bi";
+    el.innerHTML='<div class="txt"><b></b><span></span></div><div class="row"><button type="button" class="e">Editar</button></div>';
+    el.querySelector("b").textContent=b.t;el.querySelector("span").textContent=b.d;
+    el.querySelector(".e").onclick=()=>{editIdx=i;novoBanco=false;renderBanco()};
+    box.appendChild(el)});
+  if(!$("picker").hidden)renderPicker();
+}
+$("bToggle").onclick=()=>{const on=$("banco").hidden;$("banco").hidden=!on;$("bNovo").hidden=!on;$("bToggle").setAttribute("aria-expanded",on);$("bToggle").textContent=on?"Fechar o banco":"Ver e editar o banco";if(!on){editIdx=null;novoBanco=false;renderBanco()}};
+$("bNovo").onclick=()=>{novoBanco=true;editIdx=null;renderBanco()};
 
 /* ---------- desenho da folha A4 (unidades em mm) ---------- */
 const A4W=210,A4H=297;
@@ -730,7 +781,7 @@ const logoReady=new Promise(r=>{if(LOGO.complete)r();else{LOGO.onload=r;LOGO.one
 let tm=null;
 function schedule(){clearTimeout(tm);tm=setTimeout(()=>drawMenu($("preview"),items),120)}
 renderItems();
-renderMods();
+renderBanco();
 Promise.all([fontsReady(),logoReady]).then(()=>drawMenu($("preview"),items));
 drawMenu($("preview"),items);
 
