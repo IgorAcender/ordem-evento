@@ -103,7 +103,7 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
 .bi .row button{padding:8px 10px;font-size:.88rem}
 .acts .sb{color:var(--accent);margin-right:auto}
 .mini{display:block;width:30px;height:42px;border-radius:3px;margin-bottom:4px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
-.mini.classico{background:linear-gradient(135deg,#111 0 18%,#d9ad4f 18% 22%,#f6efe4 22% 78%,#d9ad4f 78% 82%,#111 82%);outline:1px solid #d9ad4f;outline-offset:-4px}
+.mini.classico{background:linear-gradient(135deg,#111 0 18%,#d9ad4f 18% 22%,#fff 22% 78%,#d9ad4f 78% 82%,#111 82%);outline:1px solid #d9ad4f;outline-offset:-4px}
 .mini.botanica{background:radial-gradient(circle at 0 0,#1f4d3a 0 30%,transparent 31%),radial-gradient(circle at 100% 100%,#2f6b4f 0 22%,transparent 23%),#f3f4ee;outline:1px solid #d6aa4a;outline-offset:-4px}
 .scrim{position:fixed;inset:0;background:rgba(10,8,5,.5);z-index:20}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-width:560px;margin:0 auto;max-height:86vh;display:flex;flex-direction:column;
@@ -140,7 +140,7 @@ body.lock{overflow:hidden}
   <section class="card">
     <h2>Fundo</h2>
     <div class="seg" role="radiogroup" aria-label="Fundo do menu">
-      <button type="button" class="opt" data-t="classico" role="radio"><span class="mini classico" aria-hidden="true"></span><b>Clássico</b><small>Creme e dourado</small></button>
+      <button type="button" class="opt" data-t="classico" role="radio"><span class="mini classico" aria-hidden="true"></span><b>Clássico</b><small>Branco e dourado</small></button>
       <button type="button" class="opt" data-t="botanica" role="radio"><span class="mini botanica" aria-hidden="true"></span><b>Botânico</b><small>Folhas verdes</small></button>
     </div>
   </section>
@@ -801,8 +801,7 @@ function botanicCorner(ctx){
 }
 const TEMAS={
   classico:{nome:"Clássico creme",
-    bg(ctx){let g=ctx.createLinearGradient(0,0,A4W,A4H);g.addColorStop(0,"#fcf9f3");g.addColorStop(.55,"#f6efe4");g.addColorStop(1,"#ede2cf");ctx.fillStyle=g;ctx.fillRect(0,0,A4W,A4H);
-      g=ctx.createRadialGradient(105,130,10,105,130,150);g.addColorStop(0,"rgba(255,255,255,.65)");g.addColorStop(1,"rgba(255,255,255,0)");ctx.fillStyle=g;ctx.fillRect(0,0,A4W,A4H);
+    bg(ctx){ctx.fillStyle="#ffffff";ctx.fillRect(0,0,A4W,A4H); // fundo branco (melhor para impressão)
       ctx.strokeStyle=gold(ctx,0,0,A4W,A4H);ctx.lineWidth=.5;ctx.strokeRect(6,6,A4W-12,A4H-12);ctx.lineWidth=.18;ctx.strokeRect(7.8,7.8,A4W-15.6,A4H-15.6);
       ctx.save();ctx.scale(.9,.9);corner(ctx);ctx.restore();ctx.save();ctx.translate(A4W,A4H);ctx.rotate(Math.PI);ctx.scale(.9,.9);corner(ctx);ctx.restore()},
     logo:"dourado",titulo:"#1c1813",nome:"#1c1813",desc:"#2a241d",rodape:"#a8761c",
