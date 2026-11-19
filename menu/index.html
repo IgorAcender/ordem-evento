@@ -59,6 +59,16 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
 .confirm span{font-size:.9rem;flex:1}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center}
 .toast.on{opacity:1}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{display:grid;justify-items:center;gap:4px;padding:14px 10px;text-align:center;background:var(--bg)}
+.opt b{font-size:.98rem}
+.opt small{color:var(--muted);font-weight:500;font-size:.8rem;line-height:1.25}
+.opt[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent)}
+.ico{display:flex;gap:2px;padding:3px;border:1.5px solid currentColor;border-radius:3px;color:var(--muted);margin-bottom:4px}
+.opt[aria-checked="true"] .ico{color:var(--accent)}
+.ico i{display:block;background:currentColor;opacity:.35;border-radius:1px}
+.ico.one{width:26px;height:36px}.ico.one i{flex:1}
+.ico.two{width:44px;height:31px}.ico.two i{flex:1}
 .pdfLink{display:block;text-align:center;padding:14px;border:2px dashed var(--accent);border-radius:12px;color:var(--accent);font-weight:600;text-decoration:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -75,6 +85,14 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
   <section class="card">
     <h2>Prévia da folha</h2>
     <canvas id="preview" class="preview" width="840" height="1188" aria-label="Prévia do menu"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Formato da impressão</h2>
+    <div class="seg" role="radiogroup" aria-label="Formato da impressão">
+      <button type="button" class="opt" data-f="1" role="radio"><span class="ico one" aria-hidden="true"><i></i></span><b>1 por folha</b><small>A4 em pé</small></button>
+      <button type="button" class="opt" data-f="2" role="radio"><span class="ico two" aria-hidden="true"><i></i><i></i></span><b>2 por folha</b><small>A4 deitado, cortar ao meio</small></button>
+    </div>
   </section>
 
   <section class="card">
@@ -646,6 +664,13 @@ renderItems();
 Promise.all([fontsReady(),logoReady]).then(()=>drawMenu($("preview"),items));
 drawMenu($("preview"),items);
 
+/* ---------- formato ---------- */
+const FMT_KEY=KEY+"-formato";
+let formato="1";try{const f=localStorage.getItem(FMT_KEY);if(f==="1"||f==="2")formato=f}catch(e){}
+function renderFmt(){document.querySelectorAll(".opt").forEach(b=>b.setAttribute("aria-checked",b.dataset.f===formato?"true":"false"))}
+document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{formato=b.dataset.f;try{localStorage.setItem(FMT_KEY,formato)}catch(e){}renderFmt()});
+renderFmt();
+
 /* ---------- PDF ---------- */
 $("btnPdf").onclick=async()=>{
   if(!window.jspdf){toast("Erro ao carregar o gerador de PDF");return}
@@ -654,9 +679,21 @@ $("btnPdf").onclick=async()=>{
   const cv=document.createElement("canvas");cv.width=2100;cv.height=2970;
   drawMenu(cv,items);
   const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});
-  doc.addImage(cv.toDataURL("image/jpeg",.92),"JPEG",0,0,A4W,A4H);
-  const nome="menu-de-drinks.pdf";
+  const img=cv.toDataURL("image/jpeg",.92);
+  let doc,nome;
+  if(formato==="2"){ // dois menus (tamanho A5) lado a lado num A4 deitado
+    doc=new jsPDF({unit:"mm",format:"a4",orientation:"landscape",compress:true});
+    const w=A4H/2,h=A4W; // 148,5 x 210
+    doc.addImage(img,"JPEG",0,0,w,h,"menu");doc.addImage(img,"JPEG",w,0,w,h,"menu");
+    // marca de corte no meio
+    doc.setDrawColor(170,170,170);doc.setLineWidth(.2);doc.setLineDashPattern([1.5,1.5],0);
+    doc.line(w,0,w,4);doc.line(w,h-4,w,h);
+    nome="menu-de-drinks-2-por-folha.pdf";
+  }else{
+    doc=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});
+    doc.addImage(img,"JPEG",0,0,A4W,A4H);
+    nome="menu-de-drinks.pdf";
+  }
   const blob=doc.output("blob");
   if(window.claude&&window.claude.use){
     let dl=null;try{dl=await window.claude.use("downloads")}catch(e){}
