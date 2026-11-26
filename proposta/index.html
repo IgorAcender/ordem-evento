@@ -94,8 +94,8 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
     <h2>Dados do orçamento</h2>
     <div class="grid">
       <label class="full">Cliente<input data-k="cliente" autocomplete="off"></label>
-      <label class="full">Local do evento<input data-k="local" autocomplete="off"></label>
       <label class="full">Cidade<input data-k="cidade" autocomplete="off"></label>
+      <label class="full">Local do evento<input data-k="local" autocomplete="off"></label>
       <label>Convidados<input data-k="convidados" type="number" inputmode="numeric"></label>
       <label>Evento<input data-k="tipo" list="tipos" autocomplete="off"></label>
       <label>Data do evento<input data-k="dataEvento" type="date"></label>
@@ -722,7 +722,7 @@ const PAGINAS=[
    logo(c,860,1150,400)}],
  ["Dados do orçamento",(c)=>{fundo(c,3);logo(c,PW-MX-260,70,260);
    titulo(c,"Dados do orçamento",MX,230,92);linhaOuro(c,MX,MX+520,275,3);
-   const lin=[["Cliente",S.cliente],["Local",S.local],["Cidade",S.cidade],["Convidados",S.convidados?S.convidados+" no total":""],["Evento",S.tipo],["Data do evento",dataBR(S.dataEvento)],["Duração do bar",S.duracao],["Data do orçamento",dataBR(S.dataOrc)]];
+   const lin=[["Cliente",S.cliente],["Cidade",S.cidade],["Local",S.local],["Convidados",S.convidados?S.convidados+" no total":""],["Evento",S.tipo],["Data do evento",dataBR(S.dataEvento)],["Duração do bar",S.duracao],["Data do orçamento",dataBR(S.dataOrc)]];
    let y=380;lin.forEach(([l,v])=>{c.font=F.tb(26);c.fillStyle=GOLD;spaced(c,l.toUpperCase(),MX,y,3);const vt=(v||"—").toString();let fz=40;c.font=F.b(fz);while(c.measureText(vt).width>PW-MX*2-430&&fz>24){fz-=1;c.font=F.b(fz)}c.fillStyle=TXT;c.fillText(vt,MX+420,y);
      c.strokeStyle="rgba(216,173,85,.18)";c.lineWidth=1.5;c.beginPath();c.moveTo(MX,y+28);c.lineTo(PW-MX,y+28);c.stroke();y+=82});
    titulo(c,"Responsabilidade do contratado",MX,y+90,64);y+=180;
