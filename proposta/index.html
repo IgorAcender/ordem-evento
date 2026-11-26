@@ -817,5 +817,12 @@ $("btnPdf").onclick=async()=>{
   }finally{bt.disabled=false;bt.textContent="Gerar PDF"}
 };
 </script>
+<script>
+// corretor ortográfico do aparelho (português) em todos os campos de texto, inclusive os criados depois
+(()=>{const sel='textarea,input:not([type]),input[type=text],input[type=search]';
+  const liga=el=>{el.spellcheck=true;el.lang="pt-BR";el.setAttribute("autocorrect","on");el.setAttribute("autocapitalize","sentences")};
+  const varre=r=>{if(r.matches&&r.matches(sel))liga(r);r.querySelectorAll&&r.querySelectorAll(sel).forEach(liga)};
+  varre(document);new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(varre))).observe(document.body,{childList:true,subtree:true})})();
+</script>
 </body>
 </html>
