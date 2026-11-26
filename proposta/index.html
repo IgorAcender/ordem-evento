@@ -94,6 +94,7 @@ button.primary{flex:1;background:var(--accent);border-color:var(--accent);color:
     <h2>Dados do orçamento</h2>
     <div class="grid">
       <label class="full">Cliente<input data-k="cliente" autocomplete="off"></label>
+      <label class="full">Local do evento<input data-k="local" autocomplete="off"></label>
       <label class="full">Cidade<input data-k="cidade" autocomplete="off"></label>
       <label>Convidados<input data-k="convidados" type="number" inputmode="numeric"></label>
       <label>Evento<input data-k="tipo" list="tipos" autocomplete="off"></label>
@@ -596,7 +597,7 @@ const PLANOS=[
    drinks:"Auge (autoral)\nSunset Tropical (autoral)\nBlue (autoral)\nAmora Royale (autoral)\nEspresso Black (autoral)\nJorge Amado\nGin frutado\nMoscow Mule\nGin com energético\nMojito\nSex on the Beach\nPiña Colada\nPink Lemonade\nSmash Brasil\nFitzgerald",
    precos:[["Vodka Orloff / Gin Rocks","4900"],["Vodka Smirnoff / Gin Gordon's","5300"],["Vodka Absolut / Gin Tanqueray","6600"],["",""]]}
 ];
-const CLIENTE={cliente:"",cidade:"",convidados:"",tipo:"",dataEvento:"",duracao:"6 horas",dataOrc:"",validade:"20",
+const CLIENTE={cliente:"",local:"",cidade:"",convidados:"",tipo:"",dataEvento:"",duracao:"6 horas",dataOrc:"",validade:"20",
   equipe:"3 funcionários (bartenders e barback)",deslocamento:"Incluído no valor",gelo:"Incluído no valor. O cliente fica responsável pelo local de armazenamento."};
 
 let S;
@@ -721,8 +722,8 @@ const PAGINAS=[
    logo(c,860,1150,400)}],
  ["Dados do orçamento",(c)=>{fundo(c,3);logo(c,PW-MX-260,70,260);
    titulo(c,"Dados do orçamento",MX,230,92);linhaOuro(c,MX,MX+520,275,3);
-   const lin=[["Cliente",S.cliente],["Cidade",S.cidade],["Convidados",S.convidados?S.convidados+" no total":""],["Evento",S.tipo],["Data do evento",dataBR(S.dataEvento)],["Duração do bar",S.duracao],["Data do orçamento",dataBR(S.dataOrc)]];
-   let y=380;lin.forEach(([l,v])=>{c.font=F.tb(26);c.fillStyle=GOLD;spaced(c,l.toUpperCase(),MX,y,3);c.font=F.b(40);c.fillStyle=TXT;c.fillText((v||"—").toString(),MX+420,y);
+   const lin=[["Cliente",S.cliente],["Local",S.local],["Cidade",S.cidade],["Convidados",S.convidados?S.convidados+" no total":""],["Evento",S.tipo],["Data do evento",dataBR(S.dataEvento)],["Duração do bar",S.duracao],["Data do orçamento",dataBR(S.dataOrc)]];
+   let y=380;lin.forEach(([l,v])=>{c.font=F.tb(26);c.fillStyle=GOLD;spaced(c,l.toUpperCase(),MX,y,3);const vt=(v||"—").toString();let fz=40;c.font=F.b(fz);while(c.measureText(vt).width>PW-MX*2-430&&fz>24){fz-=1;c.font=F.b(fz)}c.fillStyle=TXT;c.fillText(vt,MX+420,y);
      c.strokeStyle="rgba(216,173,85,.18)";c.lineWidth=1.5;c.beginPath();c.moveTo(MX,y+28);c.lineTo(PW-MX,y+28);c.stroke();y+=82});
    titulo(c,"Responsabilidade do contratado",MX,y+90,64);y+=180;
    [["Equipe",S.equipe],["Deslocamento",S.deslocamento],["Gelo",S.gelo]].forEach(([l,v])=>{c.font=F.tb(26);c.fillStyle=GOLD;spaced(c,l.toUpperCase(),MX,y,3);
